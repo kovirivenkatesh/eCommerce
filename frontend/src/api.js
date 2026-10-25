@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000/api' : '');
 
 function getAccessToken() {
   try {
@@ -11,6 +11,10 @@ function getAccessToken() {
 }
 
 async function apiRequest(path, options = {}) {
+  if (!API_BASE) {
+    throw new Error('The production API URL is not configured. Set VITE_API_URL to your deployed backend URL ending in /api.');
+  }
+
   const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
   const accessToken = getAccessToken();
 
