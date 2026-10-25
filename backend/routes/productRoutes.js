@@ -33,7 +33,7 @@ const attachUploadedImages = (req, res, next) => {
     ...(req.files?.image || []),
   ];
   if (uploadedFiles.length) {
-    const baseUrl = process.env.APP_URL || 'http://localhost:5000';
+    const baseUrl = (process.env.APP_URL || 'https://ecommerce-0d5n.onrender.com').replace(/\/+$/, '');
     req.body.images = JSON.stringify(uploadedFiles.map((file) => `${baseUrl}/uploads/${file.filename}`));
   }
   next();

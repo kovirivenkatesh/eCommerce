@@ -5,6 +5,7 @@
   "scripts": {
     "backend": "npm --prefix backend start",
     "frontend": "npm --prefix frontend run dev -- --host 0.0.0.0",
+    "build": "npm --prefix frontend run build",
     "start": "concurrently \"npm run backend\" \"npm run frontend\""
   },
   "devDependencies": {
