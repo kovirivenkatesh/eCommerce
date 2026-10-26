@@ -1,5 +1,8 @@
 const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 const userRepository = require('../repositories/userRepository');
+
+const BCRYPT_ROUNDS = 12;
 
 function normalizeRole(role) {
   return String(role || '').trim().toLowerCase();
@@ -19,7 +22,7 @@ class AuthService {
     const user = await userRepository.create({
       name: name.trim(),
       email: email.trim(),
-      password: password.trim(),
+      password: await bcrypt.hash(password.trim(), BCRYPT_ROUNDS),
     });
     const accessToken = crypto.randomBytes(32).toString('hex');
     await userRepository.updateUser(user.id, { sessionToken: accessToken });
@@ -39,8 +42,25 @@ class AuthService {
     }
 
     const user = await userRepository.findByEmail(email);
-    if (!user || user.password !== password.trim()) {
+    if (!user) {
       throw new Error('Invalid email or password.');
+    }
+
+    const submittedPassword = password.trim();
+    const storedPassword = String(user.password || '');
+    const hasBcryptHash = /^\$2[ab]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(storedPassword);
+    const passwordMatches = hasBcryptHash
+      ? await bcrypt.compare(submittedPassword, storedPassword)
+      : storedPassword === submittedPassword;
+
+    if (!passwordMatches) {
+      throw new Error('Invalid email or password.');
+    }
+
+    if (!hasBcryptHash) {
+      await userRepository.updateUser(user.id, {
+        password: await bcrypt.hash(submittedPassword, BCRYPT_ROUNDS),
+      });
     }
 
     const role = normalizeRole(user.role);
@@ -95,7 +115,7 @@ class AuthService {
     }
 
     await userRepository.updateUser(user.id, {
-      password: newPassword.trim(),
+      password: await bcrypt.hash(newPassword.trim(), BCRYPT_ROUNDS),
       resetToken: null,
       sessionToken: null,
     });
